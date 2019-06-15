@@ -13,4 +13,4 @@ Magic: the Gathering tournament documentation.
 
 
 * https://blogs.magicjudges.org/rules/mtr3-1/
-** https://blogs.magicjudges.org/rules/mtr10-4/
+* https://blogs.magicjudges.org/rules/mtr10-4/
