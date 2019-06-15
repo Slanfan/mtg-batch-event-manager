@@ -1,0 +1,128 @@
+body {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    overflow: hidden;
+}
+.btn-unpair {
+    color: #dc3545;
+}
+.btn-unpair:hover {
+    background-color: #dc3545;
+    color: white;
+}
+.segment-type {
+    font-size: 0.5rem;
+    text-transform: uppercase;
+}
+.inline-block {
+    display: inline-block;
+    width: 49%;
+}
+ul.batch-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+ul.batch-list li {
+    display: block;
+    margin-bottom: 5px;
+    width: 100%;
+}
+ul.batch-list li .btn {
+    width: 100%;
+}
+.form-wrapper {
+    padding: 1vw;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 30vw;
+    background-color: #383838;
+    height: 100vh;
+    color: white;
+}
+.tournament-list {
+    position: absolute;
+    top: 0;
+    left: 30vw;
+    background-color: white;
+    width: 70vw;
+    height: 100vh;
+    padding: 1vw;
+    overflow-y: scroll;
+}
+.tournament-area {
+    position: absolute;
+    left: 0;
+    background-color: #ececec;
+    width: 100vw;
+    height: 100vh;
+    transition: all .350s;
+}
+.tournament-area.opened {
+    top: 0vh;
+}
+.tournament-area.closed {
+    top: 100vh;
+}
+.btn-action {
+    width: 100%;
+    margin-bottom: 5px;
+}
+.btn-close {
+    position: absolute;
+    top: 1vw;
+    right: 1vw;
+    cursor: pointer;
+}
+.action-area, .player-area, .match-area, .report-area, .manual-pairing-area {
+    vertical-align: top;
+    display: inline-block;
+    height: 100%;
+    padding: 1vw 1vw 0 1vw;
+    overflow-y: scroll;
+}
+.action-area {
+    width: 20%;
+    border-right: 1px solid lightgray;
+}
+.player-area, .match-area {
+    width: 50%;
+    border-right: 1px solid lightgray;
+}
+.report-area, .manual-pairing-area {
+    width: 25%;
+}
+.card.manual-pairing-form-wrapper {
+    margin-bottom: 2vh;
+    padding: 1vw;
+    text-align: center;
+}
+.card.report-btn-wrapper {
+    margin-top: 2vh;
+    padding: 1vw;
+    text-align: center;
+}
+.btn-winner, .btn-result {
+    width: 100%;
+    cursor: pointer;
+}
+.btn-winner {
+    padding: 1.5vw 0;
+}
+.col {
+    padding: 5px;
+}
+.selected {
+    background-color: #28a745;
+    color: white;
+}
+
+
+
+.hidden {
+    display: none;
+}

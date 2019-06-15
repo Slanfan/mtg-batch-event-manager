@@ -1,0 +1,390 @@
+
+<!doctype html>
+
+<html lang="en" ng-app="tournamentApp">
+<head>
+    <meta charset="utf-8">
+    <link rel="icon" href="img/icon.png">
+    
+    <title>OS Derby Tool v1.0.10</title>
+    <meta name="description" content="Registration Form">
+    <meta name="Slanfan Development" content="SitePoint">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.materialdesignicons.com/3.6.95/css/materialdesignicons.min.css">
+    <link rel="stylesheet" href="css/style.css">
+    
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.7.8/angular.min.js"></script>
+    
+    <style>
+        
+    </style>
+</head>
+
+<body ng-controller="TournamentController as tourney">
+    
+    <div class="form-wrapper">
+        <h3>Create new tournament</h3>
+        <form ng-submit="tourney.addTournament()">
+            <div class="form-group">
+                <input type="text" class="form-control" ng-model="tourney.tournamentName" placeholder="name">
+            </div>
+            <button type="submit" class="btn btn-primary">Submit</button>
+        </form>
+        
+        <h3 style="margin-top: 10vh;">Import tournament</h3>
+        <form>
+            <div class="form-group">
+                <input type="file" class="form-control-file" id="fileInput" accept=".json">
+            </div>
+            <button type="submit" class="btn btn-primary" ng-click="tourney.importTournament()">Import</button>
+        </form>
+    </div>
+    
+    <div class="tournament-list">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th class="align-middle" scope="col">#</th>
+                    <th class="align-middle" scope="col">Name</th>
+                    <th class="align-middle" scope="col">Batches</th>
+                    <th class="align-middle" scope="col">Attendees</th>
+                    <th class="align-middle"></th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr ng-repeat="tournament in tourney.tournaments track by $index">
+                    <th class="align-middle" scope="row"><span class="mdi mdi-information" title="{{ tournament.id }}"></span></th>
+                    <td class="align-middle">{{ tournament.name }}</td>
+                    <td class="align-middle">{{ tournament.batches.length }}</td>
+                    <td class="align-middle">{{ tournament.attendees.length }}</td>
+                    <td class="align-middle text-right">
+                        <button type="button" class="btn btn-success" ng-click="tourney.showTournamentArea = !tourney.showTournamentArea; tourney.activateTournament(tournament.id)"><span class="mdi mdi-square-edit-outline"></span> Edit</button>
+                        <button type="button" class="btn btn-info" ng-click="tourney.downloadJSON(tournament.id)"><span class="mdi mdi-download-outline"></span> Download</button>
+                        <button type="button" class="btn btn-danger" ng-click="tourney.deleteTournament(tournament.id)"><span class="mdi mdi-delete-outline"></span> Delete</button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="tournament-area {{ tourney.showTournamentArea ? 'opened' : 'closed' }}">
+        <!-- ACTION AREA -->
+        <div class="action-area">
+            <h3>{{ tourney.activeTournament.name }}</h3>
+            <ul class="list-group">
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    Attendees
+                    <span class="badge badge-pill">{{ tourney.activeTournament.attendees.length }}</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    Active Batch
+                    <span class="badge badge-pill">{{ tourney.activeTournament.status.activeBatchNumber }}</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    Status
+                    <span class="badge badge-pill">{{ tourney.activeTournament.status.text }}</span>
+                </li>
+            </ul>
+            <!-- ACTIONS -->
+            <div class="tournament-actions">
+                <hr>
+                <div class="form-group">
+                    <button class="btn-action btn btn-info {{ tourney.activeTournament.status.code > 0 ? 'hidden' : '' }}" ng-click="tourney.startTournament(tourney.activeTournament.id)">Start tournament</button>
+                    <button class="btn-action btn btn-info {{ tourney.activeTournament.status.code == 1 || tourney.activeTournament.status.code == 5 ? '' : 'hidden' }}" ng-click="tourney.showBatchForm = !tourney.showBatchForm">Add batch</button>
+                    <button class="btn-action btn btn-warning {{ tourney.activeTournament.status.code == 4 ? '' : 'hidden' }}" ng-click="tourney.endBatch()">End Batch #{{ tourney.activeTournament.status.activeBatchNumber }}</button>
+                    <button class="btn-action btn btn-info {{ tourney.activeTournament.status.code == 2 ? '' : 'hidden' }}" ng-click="tourney.generatePairings()">Generate Pairings</button>
+                    <button class="btn-action btn btn-info {{ tourney.activeBatch.unPairedPlayers.length == 0 ? 'hidden' : '' }}" ng-click="tourney.manualPairingMode = !tourney.manualPairingMode; tourney.activeMatch = ''">Manual Pairings</button>
+                    <button class="btn-action btn btn-danger {{ tourney.activeTournament.status.code > 1 ? '' : 'hidden' }}" ng-click="tourney.deleteBatch()">Delete Batch #{{ tourney.activeTournament.status.activeBatchNumber }}</button>
+                    <button class="btn-action btn btn-danger" ng-click="tourney.reportAllMatches()">Report All</button>
+                </div>
+            </div>
+            <!-- NEW BATCH FORM -->
+            <div class="batch-form {{ tourney.showBatchForm ? '' : 'hidden' }}">
+                <hr>
+                <form ng-submit="tourney.addBatch(tourney.activeTournament.id)">
+                    <h3>New Batch</h3>
+                    <div class="form-group">
+                        <label for="matches">Matches in batch</label>
+                        <input type="number" class="form-control" ng-model="tourney.newBatch.matches" id="matches" placeholder="">
+                    </div>
+                    <div class="batch-pairings-wrapper">
+                        <div class="form-group inline-block">
+                            <label for="random">Random pairings</label>
+                            <input type="number" class="form-control" ng-model="tourney.newBatch.byRandom" id="random" placeholder="" min="0" max="{{ tourney.newBatch.matches - tourney.newBatch.byStandings }}">
+                        </div>
+                        <div class="form-group inline-block">
+                            <label for="fixed">Pairings by standing</label>
+                            <input type="number" class="form-control" ng-model="tourney.newBatch.byStandings" id="fixed" placeholder="" min="0" max="{{ tourney.newBatch.matches - tourney.newBatch.byRandom }}">
+                        </div>
+                    </div>
+                    <div class="alert alert-warning {{ tourney.newBatch.byRandom + tourney.newBatch.byStandings != tourney.newBatch.matches ? '' : 'hidden' }}" role="alert">Random and Fixed matches needs to add up to number of matches in batch</div>
+                    <button type="submit" class="btn btn-primary">Add</button>
+                </form>
+            </div>
+            <!-- BATCHES -->
+            <div class="batch-wrapper">
+                <hr>
+                <ul class="batch-list">
+                    <li>
+                        <button class="btn {{ tourney.showAttendeeArea ? 'btn-success' : 'btn-info' }}" ng-click="tourney.showAttendeeArea = true; tourney.showMatchArea = false; tourney.activeBatch = ''; tourney.activeMatch = ''; tourney.manualPairingMode = false;">Attendees</button>
+                    </li>
+                    <li ng-repeat="batch in tourney.activeTournament.batches track by $index">
+                        <button class="btn {{ tourney.activeBatch.id == batch.id ? 'btn-success' : 'btn-info' }}" ng-click="tourney.showAttendeeArea = false; tourney.showMatchArea = true; tourney.activateBatch(tourney.activeTournament.id, batch.id); tourney.activeMatch = ''; tourney.manualPairingMode = false;">Batch #{{ batch.number }}</button>
+                    </li>
+                </ul>
+            </div>
+            <div class="btn-close btn btn-danger" ng-click="tourney.showTournamentArea = !tourney.showTournamentArea"><span class="mdi mdi-close"></span></div>
+            <!-- ATTENDEE FORM -->
+            <!-- <div class="attendee-form {{ tourney.activeTournament.status.code > 0 ? 'hidden' : '' }}"> -->
+            <div class="attendee-form">
+                <hr>
+                <form ng-submit="tourney.addAttendees(tourney.activeTournament.id)">
+                    <div class="form-group">
+                        <label for="attendeeNames">Add attendees</label>
+                        <textarea type="text" class="form-control {{ tourney.activeTournament.status.code == 0 ? '' : 'hidden' }}" ng-model="tourney.attendeeNames" id="attendeeNames" placeholder="name" rows="8"></textarea>
+                        <input type="text" class="form-control {{ tourney.activeTournament.status.code == 0 ? 'hidden' : '' }}" ng-model="tourney.attendeeNames" id="attendeeNames" placeholder="name" rows="8">
+                        <small id="attendeeNames" class="form-text text-muted">
+                            One name on each row needed to add multiple attendees.
+                        </small>
+                    </div>
+                    <!-- <button type="submit" class="btn btn-primary" ng-disabled="tourney.activeTournament.status.code != 0">Add</button> -->
+                    <button type="submit" class="btn btn-primary">Add</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- PLAYER AREA -->
+        <div class="player-area {{ tourney.showAttendeeArea ? '' : 'hidden' }}">
+            <h3>Attendees ({{ tourney.activeTournament.attendees.length }})</h3>
+            <div class="attendee-list">
+                <div class="form-group">
+                    <input type="text" class="form-control" ng-model="tourney.attendeeListFilter" placeholder="Filter attendee by name">
+                </div>
+                <table class="table table-hover table-sm">
+                    <thead>
+                        <tr>
+                            <!-- <th class="align-middle" scope="col">#</th> -->
+                            <th class="align-middle" scope="col">Name</th>
+                            <th class="align-middle" scope="col" width="10%">Matches</th>
+                            <th class="align-middle" scope="col" width="10%">MP</th>
+                            <th class="align-middle" scope="col" width="10%">OMW%</th>
+                            <th class="align-middle" scope="col" width="10%">GW%</th>
+                            <th class="align-middle" scope="col" width="10%">OGW%</th>
+                            <th class="align-middle text-right">
+                                <button class="btn btn-default {{ tourney.activeTournament.status.code > 0 ? 'hidden' : '' }}" ng-click="tourney.deleteAllAttendees(tourney.activeTournament.id)">Drop all</button>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat="attendee in tourney.attendeeListFiltered() track by $index">
+                            <!-- <th class="align-middle" scope="row"><span class="mdi mdi-information" title="{{ attendee.id }}"></span></th> -->
+                            <td class="align-middle">{{ attendee.name }} <span class="badge badge-danger {{ attendee.haveDropped ? '' : 'hidden' }}">dropped</span></td>
+                            <td class="align-middle">{{ attendee.matches.length }}</td>
+                            <td class="align-middle">{{ attendee.stats.mp }}</td>
+                            <td class="align-middle">{{ tourney.getPercentage(attendee.stats.omwp) }}</td>
+                            <td class="align-middle">{{ tourney.getPercentage(attendee.stats.gwp) }}</td>
+                            <td class="align-middle">{{ tourney.getPercentage(attendee.stats.ogwp) }}</td>
+                            <td class="align-middle text-right">
+                                <button type="button" class="btn btn-danger {{ tourney.activeTournament.status.code > 0 ? 'hidden' : '' }}" ng-click="tourney.deleteAttendee(tourney.activeTournament.id, attendee.id)">Drop</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- MATCH AREA -->
+        <div class="match-area {{ tourney.showMatchArea ? '' : 'hidden' }}">
+            <h3>Batch: {{ tourney.activeBatch.number }} | Matches: {{ tourney.getNumberOfMatches() }} | Unpaired players: {{ tourney.activeBatch.unPairedPlayers.length }}</h3>
+            <!-- <h3>Matches ()</h3> -->
+            <div class="match-list">
+                <div class="form-group">
+                    <input type="text" class="form-control" ng-model="tourney.matchListFilter" placeholder="Filter matches by attendee name or segment number">
+                </div>
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <!-- <th class="align-middle" scope="col">#</th> -->
+                            <th class="align-middle text-center" scope="col" ng-click="tourney.sortMatchListColumn('segment')">Segment</th>
+                            <th class="align-middle text-left" scope="col" ng-click="tourney.sortMatchListColumn('playerOne')">Player one</th>
+                            <th class="align-middle text-center" scope="col">Result</th>
+                            <th class="align-middle text-right" scope="col" ng-click="tourney.sortMatchListColumn('playerTwo')">Player two</th>
+                            <th class="align-middle"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat="match in tourney.matchListFiltered()" ng-class="">
+                            <!-- <th class="align-middle" scope="row"><span class="mdi mdi-information" title="{{ match.id }}"></span></th> -->
+                            <td class="align-middle text-center"><h5><span class="badge badge-secondary">{{ match.match }}</span></h5><p class="segment-type">{{ match.type }}</p></td>
+                            <td class="align-middle text-left">{{ match.player1.name }} <span class="badge badge-danger {{ match.player1.drop ? '' : 'hidden' }}">drop</span></td>
+                            <td class="align-middle text-center">
+                                <span class="badge badge-danger {{ tourney.havePlayedEachOther(match.player1.id, match.player2.id) ? match.isReported ? 'hidden' : '' : 'hidden' }}">have played</span>
+                                <span class="badge badge-secondary {{ match.isReported ? '' : 'hidden' }}">{{ match.player1.gameWins }} - {{ match.player2.gameWins }} - {{ match.player1.gameDrawn }}</span></td>
+                            <td class="align-middle text-right">{{ match.player2.name }} <span class="badge badge-danger {{ match.player2.drop ? '' : 'hidden' }}">drop</span></td>
+                            <td class="align-middle text-right">
+                                <button type="button" class="btn {{ match.isReported ? 'btn-success' : 'btn-secondary' }}" ng-click="tourney.activateMatch(match.id); tourney.manualPairingMode = false;">{{ match.isReported ? 'Update' : 'Report' }}</button>
+                                <button type="button" class="btn btn-default btn-unpair" ng-click="tourney.unPairMatch(match.id);">Unpair</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- REPORT AREA -->
+        <div class="report-area {{ tourney.activeMatch == '' ? 'hidden' : '' }}">
+            <h3>Match reporter</h3>
+            <ul class="list-group">
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    Batch
+                    <span class="badge badge-pill">{{ tourney.activeMatch.batch }}</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    Segment
+                    <span class="badge badge-pill">{{ tourney.activeMatch.match }}</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    Pairing type
+                    <span class="badge badge-pill">{{ tourney.activeMatch.type }}</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    Player one
+                    <span class="badge badge-pill">{{ tourney.activeMatch.player1.name }}</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    Player two
+                    <span class="badge badge-pill">{{ tourney.activeMatch.player2.name }}</span>
+                </li>
+            </ul>
+            <div class="card report-btn-wrapper">
+                <h4>WINNER</h4>
+                <div class="container">
+                    <div class="row">
+                        <div class="col">
+                            <div class="btn btn-winner {{ tourney.activeMatch.player1.winner ? 'btn-success' : 'btn-secondary' }}" ng-click="tourney.activeMatch.player1.winner = true; tourney.activeMatch.player2.winner = false; tourney.activeMatch.isDraw = false; tourney.activeMatch.player1.gameWins = null; tourney.activeMatch.player2.gameWins = null; tourney.activeMatch.player1.gameDrawn = 0; tourney.activeMatch.player2.gameDrawn = 0;">{{ tourney.activeMatch.player1.name }}</div>
+                        </div>
+                        <div class="col">
+                            <div class="btn btn-winner {{ tourney.activeMatch.player2.winner ? 'btn-success' : 'btn-secondary' }}" ng-click="tourney.activeMatch.player1.winner = false; tourney.activeMatch.player2.winner = true; tourney.activeMatch.isDraw = false; tourney.activeMatch.player1.gameWins = null; tourney.activeMatch.player2.gameWins = null; tourney.activeMatch.player1.gameDrawn = 0; tourney.activeMatch.player2.gameDrawn = 0;">{{ tourney.activeMatch.player2.name }}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="container">
+                    <div class="row">
+                        <div class="col">
+                            <div class="btn btn-result {{ tourney.activeMatch.isDraw ? 'btn-success' : 'btn-secondary' }}" ng-click="tourney.activeMatch.player1.winner = false; tourney.activeMatch.player2.winner = false; tourney.activeMatch.isDraw = true; tourney.activeMatch.player1.gameWins = null; tourney.activeMatch.player2.gameWins = null; tourney.activeMatch.player1.gameDrawn = 0; tourney.activeMatch.player2.gameDrawn = 0;">Draw</div>
+                        </div>
+                    </div>
+                </div>
+                <!-- PLAYER ONE -->
+                <div class="container {{ tourney.activeMatch.player1.winner ? '' : 'hidden' }}">
+                    <hr>
+                    <h6>RESULT</h6>
+                    <div class="row">
+                        <div class="col">
+                            <div class="btn btn-result {{ tourney.activeMatch.player1.gameWins == 2 && tourney.activeMatch.player2.gameWins == 1 ? 'btn-success' : 'btn-secondary' }}" ng-click="tourney.activeMatch.player1.gameWins = 2; tourney.activeMatch.player2.gameWins = 1;">2-1</div>
+                        </div>
+                        <div class="col">
+                            <div class="btn btn-result {{ tourney.activeMatch.player1.gameWins == 2 && tourney.activeMatch.player2.gameWins == 0 ? 'btn-success' : 'btn-secondary' }}" ng-click="tourney.activeMatch.player1.gameWins = 2; tourney.activeMatch.player2.gameWins = 0;">2-0</div>
+                        </div>
+                        <div class="col">
+                            <div class="btn btn-result {{ tourney.activeMatch.player1.gameWins == 1 && tourney.activeMatch.player2.gameWins == 0 ? 'btn-success' : 'btn-secondary' }}" ng-click="tourney.activeMatch.player1.gameWins = 1; tourney.activeMatch.player2.gameWins = 0;">1-0</div>
+                        </div>
+                    </div>
+                </div>
+                <!-- PLAYER TWO -->
+                <div class="container {{ tourney.activeMatch.player2.winner ? '' : 'hidden' }}">
+                    <hr>
+                    <h6>RESULT</h6>
+                    <div class="row">
+                        <div class="col">
+                            <div class="btn btn-result {{ tourney.activeMatch.player1.gameWins == 1 && tourney.activeMatch.player2.gameWins == 2 ? 'btn-success' : 'btn-secondary' }}" ng-click="tourney.activeMatch.player1.gameWins = 1; tourney.activeMatch.player2.gameWins = 2;">2-1</div>
+                        </div>
+                        <div class="col">
+                            <div class="btn btn-result {{ tourney.activeMatch.player1.gameWins == 0 && tourney.activeMatch.player2.gameWins == 2 ? 'btn-success' : 'btn-secondary' }}" ng-click="tourney.activeMatch.player1.gameWins = 0; tourney.activeMatch.player2.gameWins = 2;">2-0</div>
+                        </div>
+                        <div class="col">
+                            <div class="btn btn-result {{ tourney.activeMatch.player1.gameWins == 0 && tourney.activeMatch.player2.gameWins == 1 ? 'btn-success' : 'btn-secondary' }}" ng-click="tourney.activeMatch.player1.gameWins = 0; tourney.activeMatch.player2.gameWins = 1;">1-0</div>
+                        </div>
+                    </div>
+                </div>
+                <!-- DRAW -->
+                <div class="container {{ tourney.activeMatch.isDraw ? '' : 'hidden' }}">
+                    <hr>
+                    <h6>RESULT</h6>
+                    <div class="row">
+                        <div class="col">
+                            <div class="btn btn-result {{ tourney.activeMatch.player1.gameWins == 1 && tourney.activeMatch.player2.gameWins == 1 ? 'btn-success' : 'btn-secondary' }}" ng-click="tourney.activeMatch.player1.gameWins = 1; tourney.activeMatch.player2.gameWins = 1;">1-1</div>
+                        </div>
+                        <div class="col">
+                            <div class="btn btn-result {{ tourney.activeMatch.player1.gameWins == 0 && tourney.activeMatch.player2.gameWins == 0 ? 'btn-success' : 'btn-secondary' }}" ng-click="tourney.activeMatch.player1.gameWins = 0; tourney.activeMatch.player2.gameWins = 0;">0-0</div>
+                        </div>
+                    </div>
+                </div>
+                <!-- DRAWS -->
+                <div class="container {{ tourney.activeMatch.player1.gameWins != null && tourney.activeMatch.player2.gameWins != null  ? '' : 'hidden' }}">
+                    <hr>
+                    <h6>GAMES DRAWN</h6>
+                    <div class="row">
+                        <div class="col">
+                            <div class="btn btn-result btn-secondary" ng-click="tourney.decreaseGamesDrawn()"><span class="mdi mdi-minus"></span></div>
+                        </div>
+                        <div class="col">
+                            <span class="align-middle text-center">{{ tourney.activeMatch.player1.gameDrawn }}</span>
+                        </div>
+                        <div class="col">
+                            <div class="btn btn-result btn-secondary" ng-click="tourney.increaseGamesDrawn()"><span class="mdi mdi-plus"></span></div>
+                        </div>
+                    </div>
+                </div>
+                <hr>
+                <div class="text-left" ng-click="tourney.activeMatch.player1.drop = !tourney.activeMatch.player1.drop">
+                    <span class="mdi {{ tourney.activeMatch.player1.drop ? 'mdi-check-circle' : 'mdi-checkbox-blank-circle-outline' }}"></span> Drop {{ tourney.activeMatch.player1.name }}
+                </div>
+                <div class="text-left" ng-click="tourney.activeMatch.player2.drop = !tourney.activeMatch.player2.drop">
+                    <span class="mdi {{ tourney.activeMatch.player2.drop ? 'mdi-check-circle' : 'mdi-checkbox-blank-circle-outline' }}"></span> Drop {{ tourney.activeMatch.player2.name }}
+                </div>
+                <hr>
+                <div class="container">
+                    <div class="row">
+                        <div class="col">
+                            <div class="btn btn-winner btn-warning" ng-click="tourney.reportActiveMatch()">Report result</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MANUAL PAIRING AREA -->
+        <div class="manual-pairing-area {{ tourney.manualPairingMode ? '' : 'hidden' }}">
+            <h3>Manual Pairing</h3>
+            <div class="card manual-pairing-form-wrapper">
+                <p class="text-left">Select a segment and then either:</p>
+                <ul class="text-left">
+                    <li>Select two attendees and hit "Pair attendees".</li>
+                    <li>Select one attendee and hit "Receives BYE".</li>
+                </ul>
+                <div class="form-group">
+                    <label for="segmentSelector">Segment</label>
+                    <select class="form-control" id="segmentSelector" ng-model="tourney.manualPairingSegment">
+                        <option ng-repeat="number in tourney.numbersArray(tourney.activeBatch.matchesToPlay) track by $index">{{ $index + 1 }}</option>
+                    </select>
+                    <br>
+                    <button class="btn-action btn btn-secondary" ng-click="tourney.manuallyPairAttendees('match')">Pair attendees</button>
+                    <button class="btn-action btn btn-secondary" ng-click="tourney.manuallyPairAttendees('bye')">Receives BYE</button>
+                </div>
+            </div>
+            <ul class="list-group">
+                <li class="list-group-item d-flex justify-content-between align-items-center {{ attendee.selected ? 'selected' : '' }}" ng-repeat="attendee in tourney.activeBatch.unPairedPlayers" ng-click="tourney.selectAttendeeToPairManual(attendee)">
+                    {{ attendee.name }}
+                    <span class="badge {{ attendee.selected ? 'badge-light' : 'badge-secondary' }}">{{ attendee.segment }}</span>
+                </li>
+
+            </ul>
+        </div>
+    </div>
+    
+    <script src="js/scripts.js"></script>
+</body>
+</html>
