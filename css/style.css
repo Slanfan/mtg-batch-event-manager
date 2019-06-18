@@ -85,6 +85,9 @@ ul.batch-list li .btn {
     padding: 1vw 1vw 0 1vw;
     overflow-y: scroll;
 }
+.badge-wrapper {
+    font-size: 1.5rem;
+}
 .action-area {
     width: 20%;
     border-right: 1px solid lightgray;

@@ -1,3 +1,10 @@
+//********************************************************************************************************************************************************/
+// Magic: The Gathering - Batch Event Manager
+// Author.: Slanfan Development (Mattias Berggren)
+// Version: 1.0.11
+// Date...: 2019.06.18
+//********************************************************************************************************************************************************/
+
 angular.module('tournamentApp', [])
 
 .controller('TournamentController', function() {
@@ -89,7 +96,22 @@ angular.module('tournamentApp', [])
     
             attendeeArray.forEach(attendee => {
                 if(attendee != "") {
-                    app.tournaments[tournamentIndex].attendees.push(app.createAttendee(attendee));
+                    let newAttendee = app.createAttendee(attendee)
+                    app.tournaments[tournamentIndex].attendees.push(newAttendee);
+
+                    // check if active batch is running or not (paired and waiting for results)
+                    if(app.activeTournament.status.code == 3 || app.activeTournament.status.code == 4) {
+                        let unPairedPlayer = {
+                            name: newAttendee.name,
+                            id: newAttendee.id,
+                            winner: false,
+                            gameWins: null,
+                            gameDrawn: 0,
+                            drop: false,
+                            segment: "new attendee",
+                        }
+                        app.activeBatch.unPairedPlayers.push(unPairedPlayer);
+                    }
                 }
             });
 
@@ -434,6 +456,21 @@ angular.module('tournamentApp', [])
 
         return filteredList;
     }
+    app.unpairedPlayersListFiltered = function() {
+        let filteredList = [];
+        app.activeBatch.unPairedPlayers.forEach((attendee) => {
+            if(app.manualPairingSegment == null) {
+                filteredList.push(attendee);
+            }
+            else {
+                if(attendee.segment == app.manualPairingSegment || attendee.segment == 'new attendee') {
+                    filteredList.push(attendee);
+                }
+            }
+        });
+
+        return filteredList;
+    }
     app.endBatch = function() {
         let index = app.tournaments.findIndex(x => x.id == app.activeTournament.id);
         let batchNumber = app.activeTournament.status.activeBatchNumber;
@@ -548,6 +585,8 @@ angular.module('tournamentApp', [])
         }, {});
         console.log(countSelected);
         if(countSelected[true] > 2) { attendee.selected = !attendee.selected; }
+
+        app.unpairedPlayersListFiltered();
     }
     app.manuallyPairAttendees = function(type) {
         let countSelected = app.activeBatch.unPairedPlayers.reduce(function(obj, attendee) {
@@ -1360,5 +1399,62 @@ angular.module('tournamentApp', [])
             }
         })
 
+    }
+    app.exportTableTo_CSV = function(tableName) {
+        let filename = app.activeTournament.name;
+        let csv = [];
+
+        if(tableName == 'matches') {
+            filename += " - Matches for Batch " + app.activeBatch.number;
+            let header = 'Segment,Player One,Player Two'
+            csv.push(header);
+            app.activeBatch.matches.forEach(match => {
+                let matchRow = match.match + ',' + match.player1.name + ',' + match.player2.name;
+                csv.push(matchRow);
+            });
+        }
+
+        if(tableName == 'attendees') {
+            filename += " - Standings";
+            let header = 'Name,Matches,Match Points,OMW%,GW%,OGW%'
+            csv.push(header);
+            app.activeTournament.attendees.forEach(attendee => {
+                let attendeeData = '';
+                attendeeData += attendee.name + ',';
+                attendeeData += attendee.matches.length + ',';
+                attendeeData += attendee.stats.mp + ',';
+                attendeeData += app.getPercentage(attendee.stats.omwp) + ',';
+                attendeeData += app.getPercentage(attendee.stats.gwp) + ',';
+                attendeeData += app.getPercentage(attendee.stats.ogwp);
+                csv.push(attendeeData);
+            });
+        }
+
+        filename += ".csv";
+
+        // Download CSV
+        let csvFile;
+        let downloadLink;
+
+        // CSV FILE
+        csvFile = new Blob([csv.join("\n")], {type: "text/csv"});
+
+        // Download link
+        downloadLink = document.createElement("a");
+
+        // File name
+        downloadLink.download = filename;
+
+        // We have to create a link to the file
+        downloadLink.href = window.URL.createObjectURL(csvFile);
+
+        // Make sure that the link is not displayed
+        downloadLink.style.display = "none";
+
+        // Add the link to your DOM
+        document.body.appendChild(downloadLink);
+
+        // Lanzamos
+        downloadLink.click();
     }
 });
