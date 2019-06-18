@@ -20,5 +20,6 @@ Magic: the Gathering tournament documentation.
 
 1.0.11
 - Adding an attendee during active batch will add them as unpaired player as well.
-- Manual pairing now only shows unpaired players within selected segment.
+- Manual pairing now only shows new players and unpaired players within selected segment.
 - Added csv download for both attendee list and match list.
+- Added bootstrap, angular and materialdesignicons directly to the project.
