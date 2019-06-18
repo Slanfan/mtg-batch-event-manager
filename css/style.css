@@ -78,7 +78,7 @@ ul.batch-list li .btn {
     right: 1vw;
     cursor: pointer;
 }
-.action-area, .player-area, .match-area, .report-area, .manual-pairing-area {
+.action-area, .player-area, .match-area, .report-area, .manual-pairing-area, .attendee-area {
     vertical-align: top;
     display: inline-block;
     height: 100%;
@@ -96,7 +96,7 @@ ul.batch-list li .btn {
     width: 50%;
     border-right: 1px solid lightgray;
 }
-.report-area, .manual-pairing-area {
+.report-area, .manual-pairing-area, .attendee-area {
     width: 25%;
 }
 .card.manual-pairing-form-wrapper {

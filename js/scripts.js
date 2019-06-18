@@ -1,7 +1,7 @@
 //********************************************************************************************************************************************************/
 // Magic: The Gathering - Batch Event Manager
 // Author.: Slanfan Development (Mattias Berggren)
-// Version: 1.0.11
+// Version: 1.0.12
 // Date...: 2019.06.18
 //********************************************************************************************************************************************************/
 
@@ -17,6 +17,8 @@ angular.module('tournamentApp', [])
     app.activeTournament = '';
     app.activeBatch = '';
     app.activeMatch = '';
+    app.activeAttendee = '';
+    app.attendeeNewName = '';
     app.showTournamentArea = false;
     app.showBatchForm = false;
     app.tournamentName = '';
@@ -101,16 +103,20 @@ angular.module('tournamentApp', [])
 
                     // check if active batch is running or not (paired and waiting for results)
                     if(app.activeTournament.status.code == 3 || app.activeTournament.status.code == 4) {
-                        let unPairedPlayer = {
-                            name: newAttendee.name,
-                            id: newAttendee.id,
-                            winner: false,
-                            gameWins: null,
-                            gameDrawn: 0,
-                            drop: false,
-                            segment: "new attendee",
+                        console.log("matches to play for new player...");
+                        console.log(app.activeBatch.matchesToPlay);
+                        for(let i = 1; i <= app.activeBatch.matchesToPlay; i++) {
+                            let unPairedPlayer = {
+                                name: newAttendee.name,
+                                id: newAttendee.id,
+                                winner: false,
+                                gameWins: null,
+                                gameDrawn: 0,
+                                drop: false,
+                                segment: i,
+                            }
+                            app.activeBatch.unPairedPlayers.push(unPairedPlayer);
                         }
-                        app.activeBatch.unPairedPlayers.push(unPairedPlayer);
                     }
                 }
             });
@@ -372,6 +378,58 @@ angular.module('tournamentApp', [])
 
         app.activeMatch = app.activeBatch.matches[matchIndex];
     }
+    app.activateAttendee = function(attendeeId) {
+        let attendeeIndex = app.activeTournament.attendees.findIndex(x => x.id == attendeeId);
+
+        app.activeAttendee = app.activeTournament.attendees[attendeeIndex];
+        console.log(app.activeAttendee);
+    }
+    app.renameActiveAttendee = function() {
+        if(app.attendeeNewName == '' || app.attendeeNewName.length < 5) {
+            alert("You need to input a name, with at least five letters...");
+        }
+        else {
+            // rename
+            if(app.attendeeNewName == app.activeAttendee.oldName) {
+                app.activeAttendee.isRenamed = false;
+            }
+            else {
+                app.activeAttendee.isRenamed = true;
+            }
+            app.activeAttendee.oldName = app.activeAttendee.name;
+            app.activeAttendee.name = app.attendeeNewName;
+
+            // rename for all event matches
+            app.activeTournament.batches.forEach(batch => {
+                batch.matches.forEach(match => {
+                    if(match.player1.id == app.activeAttendee.id) {
+                        match.player1.name = app.attendeeNewName;
+                        match.lookUp = app.attendeeNewName.toLowerCase() + " " + match.player2.name.toLowerCase() + " segment: " + match.matchNumber;
+                    }
+                    if(match.player2.id == app.activeAttendee.id) {
+                        match.player2.name = app.attendeeNewName;
+                        match.lookUp = match.player1.name.toLowerCase() + " " + app.attendeeNewName.toLowerCase() + " segment: " + match.matchNumber;
+                    }
+                });
+            });
+
+            // rename for all attendees matches
+            app.activeAttendee.matches.forEach(match => {
+                let opponentIndex = app.activeTournament.attendees.findIndex(x => x.id == match.opponentId);
+
+                app.activeTournament.attendees[opponentIndex].matches.forEach(opponentMatch => {
+                    if(opponentMatch.opponentId == app.activeAttendee.id) {
+                        opponentMatch.opponentName = app.attendeeNewName;
+                    }
+                })
+            });
+            
+            app.attendeeNewName = '';
+
+            app.saveLocalStorage();
+        }
+
+    }
     app.increaseGamesDrawn = function() {
         app.activeMatch.player1.gameDrawn++;
         app.activeMatch.player2.gameDrawn++;
@@ -423,6 +481,9 @@ angular.module('tournamentApp', [])
     }
     app.matchListFiltered = function() {
         let filteredList = [];
+        if(!app.activeBatch) {
+            return [];
+        }
         app.activeBatch.matches.forEach((match) => {
             if(app.matchListFilter == '') {
                 filteredList.push(match);
@@ -437,6 +498,9 @@ angular.module('tournamentApp', [])
     }
     app.attendeeListFiltered = function() {
         let filteredList = [];
+        if(!app.activeTournament) {
+            return [];
+        }
         app.activeTournament.attendees.forEach((attendee) => {
             if(app.attendeeListFilter == '') {
                 filteredList.push(attendee);
@@ -458,6 +522,9 @@ angular.module('tournamentApp', [])
     }
     app.unpairedPlayersListFiltered = function() {
         let filteredList = [];
+        if(!app.activeBatch) {
+            return [];
+        }
         app.activeBatch.unPairedPlayers.forEach((attendee) => {
             if(app.manualPairingSegment == null) {
                 filteredList.push(attendee);
