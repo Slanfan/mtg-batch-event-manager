@@ -6,7 +6,7 @@
     <meta charset="utf-8">
     <link rel="icon" href="img/icon.png">
     
-    <title>OS Derby Tool v1.0.12</title>
+    <title>OS Derby Tool v1.0.13</title>
     <meta name="description" content="Registration Form">
     <meta name="Slanfan Development" content="SitePoint">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -207,7 +207,8 @@
             <div class="match-list">
                 <div class="form-inline mb-2">
                     <input type="text" class="form-control mr-sm-2" style="width: 70%;" ng-model="tourney.matchListFilter" placeholder="Filter matches by attendee name or segment number">
-                    <button type="button" class="btn btn-secondary" ng-click="tourney.exportTableTo_CSV('matches')"><span class="mdi mdi-download-outline"></span> Download</button>
+                    <button type="button" class="btn btn-secondary mr-sm-2" ng-click="tourney.exportTableTo_CSV('matches')"><span class="mdi mdi-download-outline"></span> Download</button>
+                    <button type="button" class="btn btn-secondary" ng-click="tourney.showReportedMatches = !tourney.showReportedMatches"><span class="mdi {{ tourney.showReportedMatches ? 'mdi-eye-off-outline' : 'mdi-eye-outline' }}"></span> Reported</button>
                 </div>
                 <table class="table table-hover" id="match-table">
                     <thead>
@@ -221,7 +222,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr ng-repeat="match in tourney.matchListFiltered() track by $index" ng-class="">
+                        <tr ng-repeat="match in tourney.matchListFiltered() track by $index" class="{{ tourney.showReportedMatches == false ? match.isReported ? 'hidden' : 'visible' : 'visible' }}">
                             <!-- <th class="align-middle" scope="row"><span class="mdi mdi-information" title="{{ match.id }}"></span></th> -->
                             <td class="align-middle text-center"><div class="badge-wrapper"><span class="badge badge-secondary">{{ match.match }}</span></div><div class="segment-type">{{ match.type }}</div></td>
                             <td class="align-middle text-left">{{ match.player1.name }} <span class="badge badge-danger {{ match.player1.drop ? '' : 'hidden' }}">drop</span></td>
