@@ -18,6 +18,9 @@ Magic: the Gathering tournament documentation.
 
 # Version history
 
+1.0.13
+- Added button to toggle reported matches visible/hidden in the match area
+
 1.0.12
 - Added support to rename attendee and all instances of the name
 - Bugfix: Adding new attendee during active batch adds the attendee as unpaired for each segment in the batch
