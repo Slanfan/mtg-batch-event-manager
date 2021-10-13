@@ -1487,7 +1487,7 @@ angular.module('tournamentApp', [])
             csv.push(header);
             app.activeTournament.attendees.forEach(attendee => {
                 let attendeeData = '';
-                attendeeData += attendee.name + ',';
+                attendeeData += ’"${attendee.name}",’;
                 attendeeData += attendee.matches.length + ',';
                 attendeeData += attendee.stats.mp + ',';
                 attendeeData += app.getPercentage(attendee.stats.omwp) + ',';
