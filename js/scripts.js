@@ -301,16 +301,19 @@ angular.module('tournamentApp', [])
 
     }
     app.deleteBatch = function() {
-        let index = app.tournaments.findIndex(x => x.id == app.activeTournament.id);
-        app.tournaments[index].batches.pop();
-        if(app.tournaments[index].batches.length == 0) {
-            app.setTournamentStatus(index, 1);
-            app.saveLocalStorage();
-        }
-        else {
-            app.activeTournament.status.activeBatchNumber--;
-            app.setTournamentStatus(index, 5);
-            app.saveLocalStorage();
+        let deleteBatch = confirm('Are you sure you want to delete this batch?')
+        if (deleteBatch) {
+            let index = app.tournaments.findIndex(x => x.id == app.activeTournament.id);
+            app.tournaments[index].batches.pop();
+            if(app.tournaments[index].batches.length == 0) {
+                app.setTournamentStatus(index, 1);
+                app.saveLocalStorage();
+            }
+            else {
+                app.activeTournament.status.activeBatchNumber--;
+                app.setTournamentStatus(index, 5);
+                app.saveLocalStorage();
+            }
         }
     }
     app.newMatchData = function(batchNumber, matchNumber, matchType, player1id, player1name, player2id, player2name) {
