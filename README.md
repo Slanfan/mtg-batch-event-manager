@@ -20,6 +20,7 @@ Magic: the Gathering tournament documentation.
 1.0.14
 - Fixed a bug in the checked function havePlayedEachOther as it failed for BYE's
 - Fixed a string manipulation that was using the incorrect qoutation markup
+- Deleting batches now demands a confirmation
 
 1.0.13
 - Added button to toggle reported matches visible/hidden in the match area
