@@ -1,8 +1,8 @@
 //********************************************************************************************************************************************************/
 // Magic: The Gathering - Batch Event Manager
 // Author.: Slanfan Development (Mattias Berggren)
-// Version: 1.0.12
-// Date...: 2019.06.18
+// Version: 1.0.14
+// Date...: 2025.01.24
 //********************************************************************************************************************************************************/
 
 angular.module('tournamentApp', [])
@@ -1397,7 +1397,10 @@ angular.module('tournamentApp', [])
     app.havePlayedEachOther = function(player1id, player2id) {
         let player1index = app.activeTournament.attendees.findIndex(x => x.id == player1id);
         let player2index = app.activeTournament.attendees.findIndex(x => x.id == player2id);
-        
+
+        if (player2index === -1) {
+            return false
+        }
         if(app.activeTournament.attendees[player1index].matches.findIndex(x => x.opponentId == player2id) != -1 && app.activeTournament.attendees[player2index].matches.findIndex(x => x.opponentId == player1id) != -1) {
             return true;
         }
@@ -1487,7 +1490,7 @@ angular.module('tournamentApp', [])
             csv.push(header);
             app.activeTournament.attendees.forEach(attendee => {
                 let attendeeData = '';
-                attendeeData += ’"${attendee.name}",’;
+                attendeeData += `"${attendee.name}",`;
                 attendeeData += attendee.matches.length + ',';
                 attendeeData += attendee.stats.mp + ',';
                 attendeeData += app.getPercentage(attendee.stats.omwp) + ',';
